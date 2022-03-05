@@ -2,19 +2,34 @@ import java.util.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 public class Menu {
 
     private Scanner menuInput = new Scanner(System.in);
     private GeneratePassword password = new GeneratePassword();
+    private Account account = null;
 
-    public Menu() {
+    private int dbOption;
+    private int id;
 
+    // TESTING
+
+    private void test(int option) {
+
+        List<Integer> list = new ArrayList<>(5);
+
+        for (int i = 0; i < 5; i++) {
+            list.add(i + 1);
+        }
+
+        if (list.contains(option)) {
+            startMenu();
+        }
     }
+    // TODO add master password login
 
-    // TODO add master password login 
-    
     public void startMenu() {
         System.out.println();
         while (true) {
@@ -26,36 +41,58 @@ public class Menu {
             System.out.println("5. Quit");
 
             int option = menuInput.nextInt();
-            switch (option) {
-                case 1:
-                    // password
-                    // password menu
-                    System.out.println("Entering password menu");
-                    passwordMenu();
-                    break;
-                case 2:
-                    // add an account
-                    accountMenu();
-                    break;
-                case 3:
-                    // delete an account
 
-                    break;
-                case 4:
-                    // view database
-                    viewDatabase();
-                    break;
-                case 5: 
-                    // quit
-                    System.out.println("Thank you for using PasswordManager.");
-                    System.exit(0);
-                    break;
-                default:
-                    System.out.println("Error.");
-                    // menu();
-            }
+      
+
+                switch (option) {
+                    case 1:
+                        // password
+                        // password menu
+                        System.out.println("Entering password menu");
+                        passwordMenu();
+                        break;
+                    case 2:
+                        // add an account
+                        accountMenu();
+                        break;
+                    case 3:
+                        // delete an account
+                        deleteAccount();
+                        break;
+                    case 4:
+                        // view database
+                        viewDatabase();
+                        break;
+                    case 5:
+                        // quit
+                        System.out.println("Thank you for using PasswordManager.");
+                        System.exit(0);
+                        break;
+                    default:
+                        System.out.println("Error.");
+                        // menu();
+                }
+
+           
 
         }
+
+    }
+
+    // to delete an account
+    // view the database
+    // then ask the user which account they want to delete by specifying an id
+    // number !
+    private void deleteAccount() {
+        dbOption = 1;
+        connectToDB();
+
+        System.out.println("To delete an account you must specify an account id.");
+        System.out.println("Enter the account id: ");
+        id = menuInput.nextInt();
+
+        dbOption = 3;
+        connectToDB();
 
     }
 
@@ -77,19 +114,15 @@ public class Menu {
     }
 
     private void viewDatabase() {
+        dbOption = 1;
         connectToDB();
-    
     }
 
     private void accountMenu() {
-
-        // connect to db
-        // 1. Ask for login
-        // 2. Ask for password
-        // 3. Ask for what service
-        // 4. Insert querys to table in database
+        // 1. Ask for account info
+        // 2. Insert querys to table in database
         System.out.println("To add an account you must provide\nLogin\nPassword\nService");
-    
+
         System.out.println("Enter service: ");
         String service = menuInput.next();
 
@@ -99,63 +132,102 @@ public class Menu {
         System.out.println("Enter password: ");
         String p = menuInput.next();
 
-        // connectToDB(service, login, p);
+        account = new Account(service, login, p);
+
+        dbOption = 2;
+
+        connectToDB();
 
     }
 
     private void connectToDB() {
-        
+
         Connection c = null;
-        Statement  s = null;
+        Statement s = null;
+
         String url = "jdbc:postgresql://localhost:5432/testdb";
         String user = "postgres";
         String dbPass = "local";
+
         try {
             Class.forName("org.postgresql.Driver");
-            
+
             c = DriverManager.getConnection(url, user, dbPass);
 
-            if(c != null) {
+            if (c != null) {
                 System.out.println("Connection: [OK]");
             } else {
                 System.out.println("Connection: [FAILED]");
             }
 
-            // insert values to table
+            // Creating Statement object for sending SQL statements
             s = c.createStatement();
-            ResultSet rs = s.executeQuery("SELECT * FROM manager;");
-            System.out.println("===================================");
-            while(rs.next()) {
-                String srvce = rs.getString("service");
-                String l = rs.getString("login");
-                String p = rs.getString("password");
-                System.out.printf( "Service = %s , Login = %s, Password = %s ", srvce,l,p);
-                System.out.println();
+
+            // if viewingDB = true, then view db
+            // if addingAccount = true, then add account
+
+            // Views table from database
+            switch (dbOption) {
+                case 1:
+                    System.out.println("Displaying Table: [OK]");
+                    displayTable(s);
+                    break;
+                case 2:
+                    System.out.println("Querying Table: [OK]");
+                    insertQuery(s);
+                    break;
+                case 3:
+                    System.out.println("Querying Table: [OK]");
+                    deleteQuery(s, id);
+
+                    break;
             }
-            System.out.println("===================================");
-            // String sql = "INSERT INTO manager (service,login,password) " + 
-            // "VALUES ('" + service + "', '" + login + "', '" + pw + "');";
 
-
-
-            // executes given SQL statement
-            // s.executeUpdate(sql);
             s.close();
             c.close();
-            rs.close();
-
-
-
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(e.getClass().getName()+": "+e.getMessage());
+            System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
         }
 
         System.out.println();
 
+    }
 
+    private void displayTable(Statement s) throws SQLException {
+        ResultSet rs = s.executeQuery("SELECT * FROM manager;");
+        System.out.println("===================================");
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String srvce = rs.getString("service");
+            String l = rs.getString("login");
+            String p = rs.getString("password");
+            System.out.printf("ID = %s , Service = %s , Login = %s, Password = %s ", id, srvce, l, p);
+            System.out.println();
+        }
+        System.out.println("===================================");
+        rs.close();
+
+    }
+
+    private void insertQuery(Statement s) throws SQLException {
+        String sql = "INSERT INTO manager (service,login,password) " +
+                "VALUES ('" + account.getService() + "', '" + account.getLogin() + "', '"
+                + account.getPassword() + "');";
+        // executes given SQL statement
+        s.executeUpdate(sql);
+    }
+
+    private void deleteQuery(Statement s, int id) {
+        String sql = "DELETE FROM manager WHERE id = " + id + ";";
+
+        try {
+            s.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }

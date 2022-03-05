@@ -1,5 +1,4 @@
 import java.util.Random;
-import java.util.*;
 
 // The idea of this class is to generate a password
 public class GeneratePassword {
