@@ -1,4 +1,5 @@
 import java.util.*;
+import java.io.Console;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -14,23 +15,52 @@ public class Menu {
     private int dbOption;
     private int id;
 
-    // TESTING
+    private final String MASTER_PASSWORD = "root";
 
-    private void test(int option) {
-
-        List<Integer> list = new ArrayList<>(5);
-
-        for (int i = 0; i < 5; i++) {
-            list.add(i + 1);
-        }
-
-        if (list.contains(option)) {
-            startMenu();
-        }
-    }
     // TODO add master password login
 
+
+    private void masterPassword() {
+
+        // 1. Prompt user to enter master password.
+        // 2. Compare user input to MASTER_PASSWORD
+        // 3. Check to see if they're equal, otherwise prompt again
+        
+        
+        Console console = System.console();
+        StringBuilder sb = new StringBuilder();
+        char[] password = null;
+        if(console != null)  {
+             password = console.readPassword("Enter password: ");
+            
+            for(int i = 0; i < password.length; i++) {
+                sb.append(password[i]);
+            }
+            
+
+            System.out.println(sb.toString());
+
+            // if input != master password then ask again 
+            if(!(MASTER_PASSWORD.equals(sb.toString()))) {
+                System.out.println("---------------------------------------");
+                System.out.println("Incorrect Master Password. Please try again.\n\n");
+                masterPassword();
+            }
+
+    
+        }
+
+
+
+    }
+
+
     public void startMenu() {
+
+
+        masterPassword();
+
+
         System.out.println();
         while (true) {
             System.out.println("Welcome to PasswordManager");
@@ -163,9 +193,6 @@ public class Menu {
             // Creating Statement object for sending SQL statements
             s = c.createStatement();
 
-            // if viewingDB = true, then view db
-            // if addingAccount = true, then add account
-
             // Views table from database
             switch (dbOption) {
                 case 1:
@@ -179,7 +206,6 @@ public class Menu {
                 case 3:
                     System.out.println("Querying Table: [OK]");
                     deleteQuery(s, id);
-
                     break;
             }
 
